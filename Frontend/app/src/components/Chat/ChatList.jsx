@@ -4,6 +4,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import Message from "../Message";
 import Loader from "../Loader";
+import Avatar from "../Avatar";
 
 function ChatList() {
   const [chats, setChats] = useState([]);
@@ -61,18 +62,7 @@ function ChatList() {
                     key={user._id}
                     className="d-flex align-items-center me-3"
                   >
-                    <img
-                      src={
-                        user.profilePicture || "https://via.placeholder.com/50"
-                      }
-                      alt={user.username}
-                      className="rounded-circle me-2"
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        objectFit: "cover",
-                      }}
-                    />
+                    <Avatar src={user.profilePicture} alt={user.username} size={40} className="me-2" />
                     <span>{user.username}</span>
                   </div>
                 ))}

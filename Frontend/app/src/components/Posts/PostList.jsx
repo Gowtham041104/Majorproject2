@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Card, Button, Form } from "react-bootstrap";
 import axios from "axios";
 import Loader from "../Loader";
 import Message from "../Message";
+import { resolveImageUrl } from "../../utils/imageUrl";
+import Avatar from "../Avatar";
+import { formatRelativeTime } from "../../utils/time";
 
 function PostList({ posts, fetchPosts ,startChartHandler}) {
   const [loading, setLoading] = useState(false);
@@ -10,6 +13,8 @@ function PostList({ posts, fetchPosts ,startChartHandler}) {
   const [message, setMessage] = useState("");
   const handleClose = () => setMessage("");
   const [commentContent, setCommentContent] = useState({});
+  const [optimisticLikes, setOptimisticLikes] = useState({});
+  const lastTapRef = useRef({});
 
   const submitCommentHandler = async (postId) => {
     try {
@@ -70,6 +75,48 @@ function PostList({ posts, fetchPosts ,startChartHandler}) {
     }
   };
 
+  const toggleLike = async (post) => {
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    const isLiked = (post.likes || []).includes(userInfo._id);
+    const url = isLiked ? `/api/posts/${post._id}/unlike` : `/api/posts/${post._id}/like`;
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+    // optimistic update
+    setOptimisticLikes((prev) => ({
+      ...prev,
+      [post._id]: {
+        liked: !isLiked,
+        count: (post.likes?.length || 0) + (!isLiked ? 1 : -1),
+      },
+    }));
+    try {
+      await axios.post(url, {}, config);
+      fetchPosts();
+    } catch (e) {
+      // revert on error
+      setOptimisticLikes((prev) => ({ ...prev, [post._id]: undefined }));
+      setError(
+        e.response && e.response.data.message
+          ? e.response.data.message
+          : e.message
+      );
+    }
+  };
+
+  const handleImageTap = (postId) => {
+    const now = Date.now();
+    const last = lastTapRef.current[postId] || 0;
+    if (now - last < 300) {
+      const post = posts.find((p) => p._id === postId);
+      if (post) toggleLike(post);
+    }
+    lastTapRef.current[postId] = now;
+  };
+
   return (
     <>
       {loading ? (
@@ -81,22 +128,15 @@ function PostList({ posts, fetchPosts ,startChartHandler}) {
       ) : (
         posts?.map((post) => (
           <>
-            <Card key={post._id} className="my-3">
+            <Card key={post._id} className="my-3 card-post">
               <Card.Body>
                 <Card.Title>
                   <div className="d-flex align-items-center">
-                    <img
-                      src={
-                        post.user.profilePicture ||
-                        "https://via.placeholder.com/50"
-                      }
+                    <Avatar
+                      src={post.user.profilePicture}
                       alt={post.user.username}
-                      className="rounded-circle me-2"
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        objectFit: "cover",
-                      }}
+                      size={40}
+                      className="me-2"
                     />
                     <span>{post.user.username}</span>
                     {post.user._id ===
@@ -115,24 +155,67 @@ function PostList({ posts, fetchPosts ,startChartHandler}) {
                 </Card.Title>
                 <Card.Text>{post.content}</Card.Text>
                 <Card.Text>
-                  <small className="text-body-secondary">
-                    Posted at : {post.createdAt}
+                  <small className="text-subtle">
+                    {formatRelativeTime(post.createdAt)}
                   </small>
                 </Card.Text>
 
                 {post?.image && (
                   <Card.Img
                     variant="top"
-                    src={post.image}
+                    src={resolveImageUrl(post.image)}
                     alt="Post image"
-                    className="card-img-top"
+                    className="card-img-top post-image"
                     style={{
                       width: "300px",
                       height: "300px",
                       objectFit: "cover",
+                      borderRadius: "6px",
                     }}
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "https://via.placeholder.com/300";
+                    }}
+                    onClick={() => handleImageTap(post._id)}
                   />
                 )}
+
+                <div className="action-bar mt-2">
+                  <Button
+                    variant="light"
+                    size="sm"
+                    onClick={() => toggleLike(post)}
+                  >
+                    <i
+                      className={
+                        (optimisticLikes[post._id]?.liked || (post.likes || []).includes(JSON.parse(localStorage.getItem("userInfo"))._id))
+                          ? "fa-solid fa-heart text-danger"
+                          : "fa-regular fa-heart"
+                      }
+                    ></i>
+                  </Button>
+                  <span className="text-muted">
+                    {(optimisticLikes[post._id]?.count ?? post.likes?.length) || 0} likes
+                  </span>
+                  <Button
+                    variant="light"
+                    size="sm"
+                    onClick={() => {
+                      const url = `${window.location.origin}/post/${post._id}`;
+                      if (navigator.share) {
+                        navigator.share({ title: 'Post', url }).catch(() => {});
+                      } else {
+                        navigator.clipboard.writeText(url).then(() => {
+                          setMessage('Link copied');
+                          setTimeout(() => setMessage(''), 1000);
+                        });
+                      }
+                    }}
+                  >
+                    <i className="fa-solid fa-share"></i>
+                  </Button>
+                </div>
 
               </Card.Body>
               

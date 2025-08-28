@@ -7,7 +7,9 @@ const {
     createComment,
     getPostById,
     getUserPosts,
-    deletePost
+    deletePost,
+    likePost,
+    unlikePost,
 } = require('../controllers/postController')
 
 const router = express.Router();
@@ -16,9 +18,10 @@ const router = express.Router();
 // "api/posts/"
 
 router.route('/').post(protect,createPost).get(protect,getPosts);
-router.route('/:id').get(protect,getPostById);
+router.route('/:id').get(protect,getPostById).delete(protect,deletePost)
+router.route('/:id/like').post(protect, likePost);
+router.route('/:id/unlike').post(protect, unlikePost);
 router.route('/:id/comments').post(protect,createComment);
 router.route('/user/:userId').get(protect,getUserPosts);
-router.route('/:id').get(protect,getPostById).delete(protect,deletePost)
 
 module.exports=router

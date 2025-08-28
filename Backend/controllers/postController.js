@@ -11,7 +11,7 @@ const storage= multer.diskStorage({
     cb(null,'uploads/')
  },
  filename(req,file,cb){
-    cb(null, `${file.filename}-${Date.now()}${path.extname(file.originalname)}`)
+    cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`)
  }
 })
 
@@ -46,22 +46,41 @@ const createPost =[
     })
 ];
 
-//Get posts from followings users or own posts
-// GET /api/posts
+//Get posts from followings users or own posts with pagination
+// GET /api/posts?page=<number>&limit=<number>
 
 const getPosts = asyncHandler(async (req,res)=>{
+    const page = Number(req.query.page) || 1;
+    const limit = Math.min(Number(req.query.limit) || 10, 50);
+    const skip = (page - 1) * limit;
+
     const user=req.user;
     const following=user.following;
-    const posts = await Post.find({
+
+    const filter = {
         $or:[
             {user:{$in:following}},
             {user:user._id}
         ]
-    })
-    .populate('user','username profilePicture')
-    .populate('comments.user','username profilePicture')
+    };
 
-    res.json(posts)
+    const [items, total] = await Promise.all([
+        Post.find(filter)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate('user','username profilePicture')
+            .populate('comments.user','username profilePicture'),
+        Post.countDocuments(filter)
+    ]);
+
+    res.json({
+        items,
+        page,
+        limit,
+        total,
+        hasMore: skip + items.length < total,
+    })
 })
 
 
@@ -129,11 +148,48 @@ const deletePost=asyncHandler(async (req,res)=>{
     }
 })
 
+// like a post
+// POST /api/posts/:id/like
+const likePost = asyncHandler(async (req,res)=>{
+    const post = await Post.findById(req.params.id);
+    if(!post){
+        res.status(404);
+        throw new Error('Post not found');
+    }
+    const userId = req.user._id.toString();
+    const alreadyLiked = post.likes?.some((id)=> id.toString() === userId);
+    if(alreadyLiked){
+        return res.json({ message:'Already liked', likes: post.likes.length });
+    }
+    post.likes = post.likes || [];
+    post.likes.push(req.user._id);
+    await post.save();
+    res.json({ message:'Liked', likes: post.likes.length });
+})
+
+// unlike a post
+// POST /api/posts/:id/unlike
+const unlikePost = asyncHandler(async (req,res)=>{
+    const post = await Post.findById(req.params.id);
+    if(!post){
+        res.status(404);
+        throw new Error('Post not found');
+    }
+    const userId = req.user._id.toString();
+    const before = post.likes?.length || 0;
+    post.likes = (post.likes || []).filter((id)=> id.toString() !== userId);
+    await post.save();
+    const after = post.likes.length;
+    res.json({ message: before !== after ? 'Unliked' : 'Not liked', likes: post.likes.length });
+})
+
 module.exports={
     createPost,
     getPosts,
     createComment,
     getPostById,
     getUserPosts,
-    deletePost
+    deletePost,
+    likePost,
+    unlikePost
 }

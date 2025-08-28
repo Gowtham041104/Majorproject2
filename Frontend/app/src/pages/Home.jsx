@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import Loader from '../components/Loader';
@@ -15,6 +15,9 @@ function Home() {
     const [message, setMessage] = useState("");
     const handleClose = () => setMessage("");
     const [posts, setPosts] = useState([]);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const observerRef = useRef(null);
     const [chats,setChats] = useState([])
 
 
@@ -73,8 +76,13 @@ const fetchChats = async ()=>{
             Authorization: `Bearer ${userInfo.token}`,
           },
         };
-        const {data} = await axios.get('/api/posts',config);
-        setPosts(data);
+        const {data} = await axios.get(`/api/posts?page=${page}&limit=6`,config);
+        if(page === 1){
+          setPosts(data.items);
+        } else {
+          setPosts((prev)=> [...prev, ...data.items]);
+        }
+        setHasMore(data.hasMore);
         setLoading(false)
       }
       catch (error) {
@@ -95,7 +103,26 @@ const fetchChats = async ()=>{
       fetchPosts();
       fetchChats();
       
-    },[])
+    },[page])
+
+    useEffect(()=>{
+      if(!hasMore) return;
+      const target = observerRef.current;
+      if(!target) return;
+      const io = new IntersectionObserver((entries)=>{
+        if(entries[0].isIntersecting){
+          setPage((p)=> p + 1);
+        }
+      }, { rootMargin: '200px' });
+      io.observe(target);
+      return ()=> io.disconnect();
+    },[hasMore, observerRef.current])
+
+    const resetFeed = ()=>{
+      setPage(1);
+      setHasMore(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     
 
@@ -108,11 +135,14 @@ const fetchChats = async ()=>{
         </Col>
         <Col md={6}>
         <h3 className="text-center bg-light text-dark mt-2">Upload Posts</h3>
-        <PostForm   fetchPosts={  fetchPosts } />
+        <PostForm   fetchPosts={  fetchPosts } resetFeed={resetFeed} />
         <hr />
 
 
         <PostList posts={posts} fetchPosts={fetchPosts} startChartHandler={startChartHandler}/>
+        {hasMore && (
+          <div ref={observerRef} style={{ height: 1 }}></div>
+        )}
         </Col>
 
 

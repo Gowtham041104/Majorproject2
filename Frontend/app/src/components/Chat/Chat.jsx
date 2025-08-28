@@ -5,6 +5,8 @@ import io from "socket.io-client";
 import axios from "axios";
 import Loader from "../Loader";
 import Message from "../Message";
+import Avatar from "../Avatar";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
 const ENDPOINT = 'http://localhost:5000';
 let socket;
@@ -88,8 +90,13 @@ function Chat() {
         <ListGroup>
           {messages?.map((message) => (
             <ListGroup.Item key={message._id}>
-         <strong>{message?.sender?.username}</strong> :
-              {message?.content}
+              <div className="d-flex align-items-center">
+                <Avatar src={message?.sender?.profilePicture} alt={message?.sender?.username} size={32} className="me-2" />
+                <div>
+                  <strong>{message?.sender?.username}</strong>
+                  <div>{message?.content}</div>
+                </div>
+              </div>
             </ListGroup.Item>
           ))}
         </ListGroup>

@@ -56,7 +56,12 @@ const getUserProfile = asyncHandler (async (req,res)=>{
     const user= await User.findById(req.user._id).populate('followers following').select('-password');
 
     if(user){
-        res.json(user)
+        // Ensure profilePicture field exists even for legacy records
+        const normalized = user.toObject();
+        if (!normalized.profilePicture && normalized.profilepicture) {
+            normalized.profilePicture = normalized.profilepicture;
+        }
+        res.json(normalized)
     }
     else{
         res.status(404);

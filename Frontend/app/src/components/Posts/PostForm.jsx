@@ -4,7 +4,7 @@ import axios from "axios";
 import Loader from "../Loader";
 import Message from "../Message";
 
-function PostForm({ fetchPosts }) {
+function PostForm({ fetchPosts, resetFeed }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState("");
@@ -32,7 +32,11 @@ function PostForm({ fetchPosts }) {
       await axios.post("/api/posts", formData, config);
       setContent("");
       setImage(null);
-      fetchPosts();
+      if (typeof resetFeed === 'function') {
+        resetFeed();
+      } else {
+        fetchPosts();
+      }
       setLoading(false);
     } catch (error) {
       setLoading(false);

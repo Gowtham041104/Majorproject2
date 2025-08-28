@@ -20,7 +20,18 @@ app.get("/", (req, res) => {
     res.send('API is running')
 });
 
-app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+// Serve uploads with caching for better performance
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, '/uploads'), {
+    maxAge: '7d',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    },
+  })
+);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);

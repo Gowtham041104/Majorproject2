@@ -14,6 +14,8 @@ import Loader from "../components/Loader";
 import Message from "../components/Message";
 import QRCode from "qrcode";
 //import UserPosts from "../components/Posts/UserPosts";
+import { resolveImageUrl } from "../utils/imageUrl";
+import Avatar from "../components/Avatar";
 
 function Profile() {
   const navigate = useNavigate();
@@ -173,7 +175,9 @@ function Profile() {
         config
       );
       setMessage("Profile Picture Updated Successfully");
-      setUser({ ...user, profilePicture: data.profilePicture });
+      // Cache-bust to ensure latest image is shown after navigation
+      const cacheBusted = `${data.profilePicture}?t=${Date.now()}`;
+      setUser({ ...user, profilePicture: cacheBusted });
     } catch (error) {
       setError(
         error.response && error.response.data.message
@@ -300,20 +304,7 @@ function Profile() {
             {/* profile pic */}
 
             <div className="text-center">
-              {user.profilePicture ? (
-                <img
-                  src={user.profilePicture}
-                  alt="Profile"
-                  className="rounded-circle"
-                  width="100"
-                  height="100"
-                />
-              ) : (
-                <div
-                  className="placeholder rounded-circle"
-                  style={{ width: "100px", height: "100px" }}
-                ></div>
-              )}
+              <Avatar src={user.profilePicture} alt="Profile" size={100} />
             </div>
 
             <Form onSubmit={uploadProfilePictureHandler}>
@@ -426,20 +417,7 @@ function Profile() {
                       <Card className="h-100 text-center">
                         <Card.Body className="d-flex align-items-center">
                           <Link to={`/user/${follower._id}`}>
-                            <Card.Img
-                              variant="top"
-                              src={
-                                follower.profilePicture ||
-                                "https://via.placeholder.com/50"
-                              }
-                              alt={follower.username}
-                              className="rounded-circle me-2"
-                              style={{
-                                width: "50px",
-                                height: "50px",
-                                objectFit: "cover",
-                              }}
-                            />
+                            <Avatar src={follower.profilePicture} alt={follower.username} size={50} className="me-2" />
                           </Link>
                           <Card.Title className="mb-0">
                             <Link to={`/user/${follower._id}`}>
@@ -477,20 +455,7 @@ function Profile() {
                       <Card className="h-100 text-center">
                         <Card.Body className="d-flex align-items-center">
                           <Link to={`/user/${following._id}`}>
-                            <Card.Img
-                              variant="top"
-                              src={
-                                following.profilePicture ||
-                                "https://via.placeholder.com/50"
-                              }
-                              alt={following.username}
-                              className="rounded-circle me-2"
-                              style={{
-                                width: "50px",
-                                height: "50px",
-                                objectFit: "cover",
-                              }}
-                            />
+                            <Avatar src={following.profilePicture} alt={following.username} size={50} className="me-2" />
                           </Link>
                           <Card.Title className="mb-0">
                             <Link to={`/user/${following._id}`}>
@@ -522,13 +487,19 @@ function Profile() {
                       <Link to={`/post/${post._id}`}>
                         <Card.Img
                           variant="top"
-                          src={post.image}
+                          src={resolveImageUrl(post.image)}
                           alt="Post image"
                           className="img-fluid"
                           style={{
                             width: "100%",
                             height: "auto",
                             objectFit: "cover",
+                            borderRadius: "6px",
+                          }}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = "https://via.placeholder.com/300";
                           }}
                         />
                       </Link>
