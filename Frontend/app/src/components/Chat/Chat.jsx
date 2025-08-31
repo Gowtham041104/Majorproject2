@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Form, Button, ListGroup } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import io from "socket.io-client";
-import axios from "axios";
+import api from "../../utils/api";
 import Loader from "../Loader";
 import Message from "../Message";
 import Avatar from "../Avatar";
 import { resolveImageUrl } from "../../utils/imageUrl";
 
-const ENDPOINT = 'http://localhost:5000';
+const ENDPOINT = 'https://majorproject2-1-066b.onrender.com';
 let socket;
 
 function Chat() {
@@ -37,14 +37,7 @@ function Chat() {
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
-      const { data } = await axios.get(`/api/chat/${chatId}`, config);
+      const { data } = await api.get(`/api/chat/${chatId}`);
       setMessages(data); // Assuming data contains the array of messages
       setLoading(false);
     } catch (error) {
@@ -62,15 +55,7 @@ function Chat() {
   const submitMessageHandler = async (e) => {
     e.preventDefault();
     try {
-      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
-      const { data } = await axios.post(`/api/chat/${chatId}/message`, { content: messageContent }, config);
+      const { data } = await api.post(`/api/chat/${chatId}/message`, { content: messageContent });
       const lastMessage = data.messages[data.messages.length - 1]; // Get the last message
  
       socket.emit('sendMessage', { chatId,  "content":lastMessage.content});

@@ -9,7 +9,7 @@ import {
   ListGroup,
 } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import Loader from "../components/Loader";
 import Message from "../components/Message";
 import QRCode from "qrcode";
@@ -44,17 +44,10 @@ function Profile() {
 
         }
         const pasredUser = JSON.parse(userInfo);
-        const config = {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${pasredUser.token}`,
-          },
-        };
-
-        const { data } = await axios.get("/api/users/profile", config);
+        const { data } = await api.get("/api/users/profile");
         setUser(data);
 
-        const {data:postsData} =await axios.get(`/api/posts/user/${pasredUser._id}`,config);
+        const {data:postsData} = await api.get(`/api/posts/user/${pasredUser._id}`);
         setUserPosts(postsData)
 
         if (data.twoFactorAuthSecret) {
@@ -98,18 +91,8 @@ function Profile() {
         navigate("/login");
         return;
       }
-      const pasredUser = JSON.parse(userInfo);
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${pasredUser.token}`,
-        },
-      };
 
-      const { data } = await axios.get(
-        `/api/users/search?keyword=${keyword}`,
-        config
-      );
+      const { data } = await api.get(`/api/users/search?keyword=${keyword}`);
       setResults(data);
     } catch (error) {
       setError(
@@ -127,15 +110,7 @@ function Profile() {
   const startChartHandler = async (userId)=>{
     try{
       setLoading(true);
-      const userInfo=JSON.parse(localStorage.getItem('userInfo'))
-      const config = {
-        headers: {
-          'Content-Type':'application/json',
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-  
-      const {data} = await axios.post('/api/chat',{userId},config);
+      const {data} = await api.post('/api/chat',{userId});
       navigate(`/chat/${data._id}`);
   
     }
@@ -158,21 +133,18 @@ function Profile() {
         navigate("/login");
         return;
       }
-      const pasredUser = JSON.parse(userInfo);
-      const config = {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${pasredUser.token}`,
-        },
-      };
 
       const formData = new FormData();
       formData.append("profilePicture", profilePicture);
 
-      const { data } = await axios.post(
+      const { data } = await api.post(
         "/api/users/profile/upload",
         formData,
-        config
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
       setMessage("Profile Picture Updated Successfully");
       // Cache-bust to ensure latest image is shown after navigation
@@ -195,17 +167,7 @@ function Profile() {
       setError("");
       setMessage("");
 
-      const userInfo = localStorage.getItem("userInfo");
-      const parsedUser = JSON.parse(userInfo);
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${parsedUser.token}`,
-        },
-      };
-
-      const { data } = await axios.post("/api/auth/enable-2fa", {}, config);
+      const { data } = await api.post("/api/auth/enable-2fa", {});
       const otpauthUrl = data.secret;
       QRCode.toDataURL(otpauthUrl, { width: 200, margin: 2 }, (err, url) => {
         if (err) {
@@ -229,20 +191,11 @@ function Profile() {
   const followUser = async (userId) => {
     try {
       setLoading(true);
-      const userInfo = localStorage.getItem("userInfo");
-      const parsedUser = JSON.parse(userInfo);
 
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${parsedUser.token}`,
-        },
-      };
-
-      await axios.post(`/api/users/follow/${userId}`, {}, config);
+      await api.post(`/api/users/follow/${userId}`, {});
       setMessage("User followed Successfully");
 
-      const { data } = await axios.get("/api/users/profile", config);
+      const { data } = await api.get("/api/users/profile");
       setUser(data);
     } catch (error) {
       setError(
@@ -258,20 +211,10 @@ function Profile() {
     try {
       setLoading(true);
 
-      const userInfo = localStorage.getItem("userInfo");
-      const parsedUser = JSON.parse(userInfo);
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${parsedUser.token}`,
-        },
-      };
-
-      await axios.post(`/api/users/unfollow/${userId}`, {}, config);
+      await api.post(`/api/users/unfollow/${userId}`, {});
       setMessage("User followed Successfully");
 
-      const { data } = await axios.get("/api/users/profile", config);
+      const { data } = await api.get("/api/users/profile");
       setUser(data);
     } catch (error) {
       setError(

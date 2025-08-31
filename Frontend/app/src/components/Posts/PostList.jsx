@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Card, Button, Form } from "react-bootstrap";
-import axios from "axios";
+import api from "../../utils/api";
 import Loader from "../Loader";
 import Message from "../Message";
 import { resolveImageUrl } from "../../utils/imageUrl";
@@ -19,18 +19,9 @@ function PostList({ posts, fetchPosts ,startChartHandler}) {
   const submitCommentHandler = async (postId) => {
     try {
       setLoading(true);
-      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
-      await axios.post(
+      await api.post(
         `/api/posts/${postId}/comments`,
-        { content: commentContent[postId] },
-        config
+        { content: commentContent[postId] }
       );
       setCommentContent({ ...commentContent, [postId]: "" });
       fetchPosts();
@@ -44,24 +35,12 @@ function PostList({ posts, fetchPosts ,startChartHandler}) {
       );
     }
   };
+  
   const deletePostHandler = async (postId) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
         setLoading(true);
-        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-        const config = {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userInfo.token}`,
-          },
-        };
-
-        await axios.delete(
-          `/api/posts/${postId}`,
-
-          config
-        );
-
+        await api.delete(`/api/posts/${postId}`);
         fetchPosts();
         setLoading(false);
       } catch (error) {
@@ -79,12 +58,7 @@ function PostList({ posts, fetchPosts ,startChartHandler}) {
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
     const isLiked = (post.likes || []).includes(userInfo._id);
     const url = isLiked ? `/api/posts/${post._id}/unlike` : `/api/posts/${post._id}/like`;
-    const config = {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
+    
     // optimistic update
     setOptimisticLikes((prev) => ({
       ...prev,
@@ -94,7 +68,7 @@ function PostList({ posts, fetchPosts ,startChartHandler}) {
       },
     }));
     try {
-      await axios.post(url, {}, config);
+      await api.post(url, {});
       fetchPosts();
     } catch (e) {
       // revert on error

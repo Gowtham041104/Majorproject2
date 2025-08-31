@@ -8,7 +8,9 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../../utils/api";
+import Loader from "../Loader";
+import Message from "../Message";
 
 const AuthSignin = () => {
   const navigate = useNavigate();
@@ -90,20 +92,13 @@ const AuthSignin = () => {
       setLoading(true);
       setMessage(null);
 
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
-
-      const { data } = await axios.post(
+      const { data } = await api.post(
         "/api/auth/signup",
         {
           username: formValues.username,
           email: formValues.email,
           password: formValues.password,
-        },
-        config
+        }
       );
 
       localStorage.setItem("userInfo", JSON.stringify(data));

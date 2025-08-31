@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './api';
+
 export const resolveImageUrl = (relativeOrAbsolutePath) => {
   if (!relativeOrAbsolutePath) return relativeOrAbsolutePath;
 
@@ -10,11 +12,9 @@ export const resolveImageUrl = (relativeOrAbsolutePath) => {
 
   if (isAbsolute) return pathAsString;
 
-  const apiBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+  if (pathAsString.startsWith('/')) return `${API_BASE_URL}${pathAsString}`;
 
-  if (pathAsString.startsWith('/')) return `${apiBase}${pathAsString}`;
-
-  return `${apiBase}/${pathAsString}`;
+  return `${API_BASE_URL}/${pathAsString}`;
 };
 
 

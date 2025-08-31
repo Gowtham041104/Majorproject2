@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Form, Button } from "react-bootstrap";
-import axios from "axios";
+import api from "../../utils/api";
 import Loader from "../Loader";
 import Message from "../Message";
 
@@ -21,15 +21,11 @@ function PostForm({ fetchPosts, resetFeed }) {
     }
     try {
       setLoading(true);
-      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-      const config = {
+      await api.post("/api/posts", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${userInfo.token}`,
         },
-      };
-
-      await axios.post("/api/posts", formData, config);
+      });
       setContent("");
       setImage(null);
       if (typeof resetFeed === 'function') {
