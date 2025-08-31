@@ -46,7 +46,7 @@ app.options('*', cors());
 // Root route
 app.get('/', (req, res) => res.send('API is running'));
 
-// Serve uploads
+// Serve uploads (static files)
 app.use(
   '/uploads',
   express.static(path.join(__dirname, '/uploads'), {
@@ -59,7 +59,7 @@ app.use(
   })
 );
 
-// API Routes (use relative paths!)
+// API Routes (relative paths only)
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
