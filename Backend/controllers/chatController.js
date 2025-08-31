@@ -10,14 +10,13 @@ const accessChat = asyncHandler(async (req, res) => {
   let chat = await Chat.findOne({
     users: { $all: [req.user._id, userId] },
   }).populate('users', '-password').populate('messages.sender', '-password');
-
+  
   if (!chat) {
     chat = new Chat({
       users: [req.user._id, userId],
     });
     await chat.save();
   }
-
   res.json(chat);
 });
 
@@ -27,16 +26,14 @@ const accessChat = asyncHandler(async (req, res) => {
 const sendMessage = asyncHandler(async (req, res) => {
   const { chatId } = req.params;
   const { content } = req.body;
-
   const chat = await Chat.findById(chatId);
-
+  
   if (chat) {
     const message = {
       sender: req.user._id,
       content,
       timestamp: Date.now(),
     };
-
     chat.messages.push(message);
     await chat.save();
     res.json(chat);
@@ -50,7 +47,9 @@ const sendMessage = asyncHandler(async (req, res) => {
 // @route   GET /api/chat
 // @access  Private
 const getUserChats = asyncHandler(async (req, res) => {
-  const chats = await Chat.find({ users: req.user._id }).populate('users', '-password').populate('messages.sender', '-password');
+  const chats = await Chat.find({ users: req.user._id })
+    .populate('users', '-password')
+    .populate('messages.sender', '-password');
   res.json(chats);
 });
 
@@ -59,8 +58,10 @@ const getUserChats = asyncHandler(async (req, res) => {
 // @access  Private
 const getChatMessages = asyncHandler(async (req, res) => {
   const { chatId } = req.params;
-  const chat = await Chat.findById(chatId).populate('users', '-password').populate('messages.sender', '-password');
-
+  const chat = await Chat.findById(chatId)
+    .populate('users', '-password')
+    .populate('messages.sender', '-password');
+    
   if (chat) {
     res.json(chat.messages);
   } else {
