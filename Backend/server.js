@@ -28,15 +28,14 @@ app.use(cookieParser());
 
 // Allowed origins for CORS
 const allowedOrigins = [
-  'https://majorproject2-alpha.vercel.app', // frontend production
-  'http://localhost:3000',                  // local dev
-  'https://localhost:3000',                 // local dev with https
+  'https://majorproject2-alpha.vercel.app',
+  'http://localhost:3000',
+  'https://localhost:3000',
 ];
 
 // CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
@@ -69,11 +68,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
 // Serve static uploads
 app.use(
   '/uploads',
@@ -82,10 +76,8 @@ app.use(
     etag: true,
     lastModified: true,
     setHeaders: (res, filePath) => {
-      // Set appropriate cache headers
       res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
       
-      // Set content type based on file extension
       const ext = path.extname(filePath).toLowerCase();
       if (ext === '.jpg' || ext === '.jpeg') {
         res.setHeader('Content-Type', 'image/jpeg');
@@ -98,23 +90,50 @@ app.use(
   })
 );
 
-// Import and use API routes with error handling
-try {
-  const authRoutes = require('./routes/authRoutes');
-  const userRoutes = require('./routes/userRoutes');
-  const postRoutes = require('./routes/postRoutes');
-  const chatRoutes = require('./routes/chatRoutes');
+// Load routes one by one with error handling to identify the problematic one
+console.log('Loading routes...');
 
-  // API Routes
+try {
+  console.log('Loading authRoutes...');
+  const authRoutes = require('./routes/authRoutes');
   app.use('/api/auth', authRoutes);
-  app.use('/api/users', userRoutes);
-  app.use('/api/posts', postRoutes);
-  app.use('/api/chat', chatRoutes);
+  console.log('✅ authRoutes loaded successfully');
 } catch (error) {
-  console.error('Error loading routes:', error.message);
-  console.error('Stack:', error.stack);
+  console.error('❌ Error loading authRoutes:', error.message);
   process.exit(1);
 }
+
+try {
+  console.log('Loading userRoutes...');
+  const userRoutes = require('./routes/userRoutes');
+  app.use('/api/users', userRoutes);
+  console.log('✅ userRoutes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading userRoutes:', error.message);
+  process.exit(1);
+}
+
+try {
+  console.log('Loading postRoutes...');
+  const postRoutes = require('./routes/postRoutes');
+  app.use('/api/posts', postRoutes);
+  console.log('✅ postRoutes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading postRoutes:', error.message);
+  process.exit(1);
+}
+
+try {
+  console.log('Loading chatRoutes...');
+  const chatRoutes = require('./routes/chatRoutes');
+  app.use('/api/chat', chatRoutes);
+  console.log('✅ chatRoutes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading chatRoutes:', error.message);
+  process.exit(1);
+}
+
+console.log('All routes loaded successfully!');
 
 // Global error handler
 app.use((error, req, res, next) => {
@@ -133,7 +152,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-// 404 handler for undefined routes
+// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ 
     error: 'Route not found',
