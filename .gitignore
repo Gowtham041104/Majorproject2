@@ -1,7 +1,7 @@
 ﻿# Dependencies
 node_modules/
 Backend/node_modules/
-Frontend/app/node_modules/
+Frontend/node_modules/
 
 # Builds
 dist/
@@ -11,7 +11,7 @@ coverage/
 # Environment files
 .env
 Backend/.env
-Frontend/app/.env
+Frontend/.env
 
 # Logs
 npm-debug.log*
