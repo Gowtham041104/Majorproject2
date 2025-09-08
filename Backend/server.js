@@ -47,25 +47,26 @@ const isAllowedOrigin = (origin) => {
 };
 
 // CORS configuration
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
     if (isAllowedOrigin(origin)) return callback(null, true);
     console.log('Blocked by CORS:', origin);
     return callback(new Error('Not allowed by CORS'), false);
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With',
-    'Accept',
-    'Origin'
-  ],
   credentials: true,
-}));
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
 
 // Handle preflight requests (Express 5: '*' no longer valid)
-app.options('(.*)', cors());
+app.options('(.*)', cors(corsOptions));
+// Ensure OPTIONS returns immediately after headers are set
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 
 // Health check route
 app.get('/', (req, res) => {
@@ -175,10 +176,7 @@ const server = http.createServer(app);
 // Socket.IO configuration
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'));
-    },
+    origin: corsOptions.origin,
     methods: ['GET', 'POST'],
     credentials: true,
   },
