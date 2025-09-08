@@ -60,8 +60,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests (Express 5: '*' no longer valid)
-app.options('(.*)', cors(corsOptions));
 // Ensure OPTIONS returns immediately after headers are set
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(204);
