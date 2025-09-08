@@ -56,8 +56,8 @@ app.use(cors({
   credentials: true,
 }));
 
-// Handle preflight requests
-app.options('*', cors());
+// Handle preflight requests (Express 5: '*' no longer valid)
+app.options('(.*)', cors());
 
 // Health check route
 app.get('/', (req, res) => {
@@ -152,8 +152,8 @@ app.use((error, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
+// 404 handler (Express 5: avoid '*' catch-all path)
+app.use((req, res) => {
   res.status(404).json({ 
     error: 'Route not found',
     path: req.originalUrl,
