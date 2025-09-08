@@ -33,17 +33,25 @@ const allowedOrigins = [
   'https://localhost:3000',
 ];
 
+// Helper to validate dynamic origins (e.g., Vercel preview URLs)
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true; // Non-browser or same-origin
+
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Allow any Vercel deployment for this project
+  const vercelPreviewPattern = /^https:\/\/.+\.vercel\.app$/i;
+  if (vercelPreviewPattern.test(origin)) return true;
+
+  return false;
+};
+
 // CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      console.log('Blocked by CORS:', origin);
-      return callback(new Error('Not allowed by CORS'), false);
-    }
+    if (isAllowedOrigin(origin)) return callback(null, true);
+    console.log('Blocked by CORS:', origin);
+    return callback(new Error('Not allowed by CORS'), false);
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
@@ -167,7 +175,10 @@ const server = http.createServer(app);
 // Socket.IO configuration
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
